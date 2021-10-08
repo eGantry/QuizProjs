@@ -1,0 +1,40 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package calcchallenge;
+
+/**
+ *
+ * @author sillyrabbit
+ */
+public class ExponentHandler {
+    public double pow(double value, double exp) {
+        double result = Math.pow(value, exp);
+        return result;
+    }
+    
+    public double multiplyExps(double[] firstValue, double[] secondValue) {
+        if ((firstValue.length == 2) && (secondValue.length == 2)) {
+            double value1 = pow(firstValue[0], firstValue[1]);
+            double value2 = pow(secondValue[0], secondValue[1]);
+            double result = value1 * value2;
+            return result;
+        }
+        else throw new IllegalArgumentException("Incorrect number of arguments.");
+    }
+
+    public double divideExps(double[] firstValue, double[] secondValue) {
+        if ((firstValue.length == 2) && (secondValue.length == 2)) {
+            double value1 = pow(firstValue[0], firstValue[1]);
+            double value2 = pow(secondValue[0], secondValue[1]);
+            if (value2 != 0) {
+                double result = value1 / value2;
+                return result;
+            }
+            else throw new IllegalArgumentException("Incorrect number of arguments.");
+        }
+        else throw new IllegalArgumentException("Cannot divide by zero.");
+    }
+}

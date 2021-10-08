@@ -1,0 +1,33 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package calcchallenge;
+
+/**
+ *
+ * @author sillyrabbit
+ */
+public class SciCalculator extends Calculator {
+    public double sin(int value) {
+        double result = Math.sin(value);
+        return result;
+    }
+    
+    public double cos(int value) {
+        double result = Math.cos(value);
+        return result;
+    }
+    
+    public double tan(int value) {
+        double result = Math.tan(value);
+        return result;
+    }
+    
+    public double log(int value) {
+        double result = Math.log(value);
+        return result;
+    }
+    
+}
