@@ -68,7 +68,12 @@ public class Elevator {
     public void nextFloor() {
         if ((currentFloor + currentDirection <= topFloor) && (currentFloor + currentDirection >= LOBBY)) {
             currentFloor += currentDirection;
-            reportFloor("Elevator reaches floor " + currentFloor + ".");
+            if (currentFloor == LOBBY) {
+                reportFloor("Elevator reaches Lobby.");
+            }
+            else {
+                reportFloor("Elevator reaches floor " + currentFloor + ".");
+            }
         }
     }
 

@@ -17,7 +17,7 @@ public class Process {
     private ArrayList<Passenger> passengersWaiting;   //Passengers are here before boarding lift, and after exiting lift.
     private ArrayList<Passenger> passengersDone;      //Process ends when other two passenger lists are empty and all passengers are here.
     private ArrayList<Passenger> passengersAll;       //All passengers are here throughout Process.
-    
+    private PeopleCounter peopleCounter;        
     private Elevator elevator;
     
     Passenger[] passenger;
@@ -51,7 +51,7 @@ public class Process {
         passengersAll = new ArrayList<>();       //All passengers are here throughout Process.
 
         elevator = new Elevator(1, 5);
-
+        peopleCounter = new PeopleCounter();
         passenger = new Passenger[1];
         passenger[0] = new Passenger(0, 5);
         
@@ -72,33 +72,35 @@ public class Process {
             }
         }
         
-        while (passengersDone.size() < passengersAll.size()) {
+        while ((passengersDone.size() < passengersAll.size()) || elevator.getCurrentFloor() != elevator.LOBBY) {
             
             //Clear any pending requests for the current floor.
             elevator.clearFloorRequests(elevator.getCurrentFloor());
 
             //Let out any passengers from the lift who have requested this floor.
+            peopleCounter.resetCount();
             for (int whichPassenger = passengersInLift.size() -1; whichPassenger >= 0; whichPassenger--) {
                 Passenger eachPassenger = passengersInLift.get(whichPassenger);
                 if (eachPassenger.getDesiredFloor() == elevator.getCurrentFloor()) {
                     passengersDone.add(eachPassenger);
                     passengersInLift.remove(eachPassenger);
+                    peopleCounter.incrementCount();
                 }
             }
+            peopleCounter.reportCount("exit");
             
-            if (passengersDone.size() == passengersAll.size()) {
-                done = true;
-                continue;
-            }
-            
+           
             //Board any waiting passengers onto elevator from its current floor.
+            peopleCounter.resetCount();
             for (int whichPassenger = passengersWaiting.size() -1; whichPassenger >= 0; whichPassenger--) {
                 Passenger eachPassenger = passengersWaiting.get(whichPassenger);
                 if (eachPassenger.getCurrentFloor() == elevator.getCurrentFloor()) {
                     passengersInLift.add(eachPassenger);
                     passengersWaiting.remove(eachPassenger);
+                    peopleCounter.incrementCount();
                 }
             }
+            peopleCounter.reportCount("enter");
             
             //Get all in-lift passengers' floor requests.
             for (Passenger eachPassenger : passengersInLift) {
@@ -117,7 +119,16 @@ public class Process {
             
             elevator.nextFloor();
             
-        }
+            if (passengersDone.size() == passengersAll.size()) {
+                if (elevator.getCurrentFloor() != elevator.LOBBY) {
+                    elevator.requestFloor(elevator.LOBBY);
+                    elevator.setCurrentDirection(elevator.DIRECTION_DOWN);
+                }
+                else {
+                    done = true;
+                }
+            }
+         }
         
         
         return done;
