@@ -21,6 +21,10 @@ public class Elevator {
 
     private int maxPassengers = -1; //Process initilizes this.
     private int topFloor = 0;  //Highest floor the elvator can reach.  Process initilizes this.
+
+    public int getTopFloor() {
+        return topFloor;
+    }
     private int currentDirection = DIRECTION_STOPPED;  //Process updates this to change elevator's direction.
 
     
@@ -43,7 +47,12 @@ public class Elevator {
     public void requestFloor(int whichFloor) {
         if (!floorRequests.contains(whichFloor)) {
             floorRequests.add(whichFloor);
-        }
+            if (whichFloor == LOBBY) {
+                reportFloor("Request received for Lobby.");
+            }
+            else {
+                reportFloor("Request received for floor " + whichFloor + ".");
+            }        }
     }
     
     
@@ -54,6 +63,27 @@ public class Elevator {
                 floorRequests.remove(eachRequest);
             }
         }
+    }
+    
+    public void clearCurrentFloor() {
+        for (int whichRequest = floorRequests.size() -1; whichRequest >= 0; whichRequest--) {
+            Integer eachRequest = floorRequests.get(whichRequest);
+            if (eachRequest.intValue() == currentFloor) {
+                floorRequests.remove(eachRequest);
+            }
+        }    
+    }
+    
+    public int highestReqFloor() {
+        int result = -1;
+        
+        for (Integer eachReqFloor : floorRequests) {
+            if (eachReqFloor.intValue() > result) {
+                result = eachReqFloor.intValue();
+            }
+        }
+        
+        return result;
     }
     
     public void passFloor() {
