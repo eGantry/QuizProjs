@@ -50,11 +50,11 @@ public class Process {
         passengersDone = new ArrayList<>();      //Process ends when other two passenger lists are empty and all passengers are here.
         passengersAll = new ArrayList<>();       //All passengers are here throughout Process.
 
-        elevator = new Elevator(3, 5);
+        elevator = new Elevator(3, 20);
         peopleCounter = new PeopleCounter();
         passenger = new Passenger[3];
         passenger[0] = new Passenger(0, 4);
-        passenger[1] = new Passenger(0, 3);
+        passenger[1] = new Passenger(0, 18);
         passenger[2] = new Passenger(4, 2);
         
         passengersAll.add(passenger[0]);
@@ -72,14 +72,33 @@ public class Process {
         for (Passenger eachPassenger : passengersAll) {
             if (eachPassenger.getCurrentFloor() != eachPassenger.getDesiredFloor()) {
                 passengersWaiting.add(eachPassenger);
-                elevator.requestFloor(eachPassenger.getCurrentFloor());
+                int floorDiff = eachPassenger.getDesiredFloor() - eachPassenger.getCurrentFloor();
+                int whichWay = 0;
+                
+                if (floorDiff > 0) {
+                    whichWay = Elevator.DIRECTION_UP;
+                }
+                else if (floorDiff < 0) {
+                    whichWay = Elevator.DIRECTION_DOWN;
+                }
+                
+                
+                elevator.requestFloor(eachPassenger.getCurrentFloor(), whichWay);
             }
         }
         
         while ((passengersDone.size() < passengersAll.size()) || elevator.getCurrentFloor() != elevator.LOBBY) {
             
-            //Clear any pending requests for the current floor.
-            elevator.clearFloorRequests(elevator.getCurrentFloor());
+            //Get elevator moving if it is stopped.
+            if (elevator.getCurrentDirection() == Elevator.DIRECTION_STOPPED) {
+                if (elevator.getCurrentFloor() == elevator.LOBBY) {
+                    elevator.setCurrentDirection(Elevator.DIRECTION_UP);
+                }
+                else {
+                    elevator.setCurrentDirection(Elevator.DIRECTION_DOWN);
+                }
+            }
+
 
             //Let out any passengers from the lift who have requested this floor.
             elevator.clearCurrentFloor();
@@ -92,7 +111,7 @@ public class Process {
                     peopleCounter.incrementCount();
                 }
             }
-            peopleCounter.reportCount("exit");
+            peopleCounter.reportCount("exit", elevator.getCurrentFloor());
             
            
             //Board any waiting passengers onto elevator from its current floor.
@@ -100,44 +119,37 @@ public class Process {
             peopleCounter.resetCount();
             for (int whichPassenger = passengersWaiting.size() -1; whichPassenger >= 0; whichPassenger--) {
                 Passenger eachPassenger = passengersWaiting.get(whichPassenger);
-                if (eachPassenger.getCurrentFloor() == elevator.getCurrentFloor()) {
+                if ((eachPassenger.getCurrentFloor() == elevator.getCurrentFloor()) && psngrGoingSameWay(eachPassenger)) {
                     passengersInLift.add(eachPassenger);
                     passengersWaiting.remove(eachPassenger);
                     peopleCounter.incrementCount();
                 }
             }
-            peopleCounter.reportCount("enter");
-            
+            peopleCounter.reportCount("enter", elevator.getCurrentFloor());
+            FloorRequest fr;
             //Get all in-lift passengers' floor requests.
             for (Passenger eachPassenger : passengersInLift) {
-                elevator.requestFloor(eachPassenger.getDesiredFloor());
+                elevator.requestFloor(eachPassenger.getDesiredFloor(), FloorRequest.REQUEST_FLOOR_NUMBER);
             }
             
-            //Get elevator moving if it is stopped.
-            if (elevator.getCurrentDirection() == elevator.DIRECTION_STOPPED) {
-                if (elevator.getCurrentFloor() == elevator.LOBBY) {
-                    elevator.setCurrentDirection(elevator.DIRECTION_UP);
-                }
-                else {
-                    elevator.setCurrentDirection(elevator.DIRECTION_DOWN);
-                }
-            }
-            
+            //Clear any pending requests for the current floor.
+            elevator.clearFloorRequests(elevator.getCurrentFloor());
+
 //            elevator.nextFloor();
             
             //If going UP, and the current floor is the top floor, or the highest requested floor, 
             //switch directions to DOWN.
-            if (elevator.getCurrentDirection() == elevator.DIRECTION_UP && 
+            if (elevator.getCurrentDirection() == Elevator.DIRECTION_UP && 
                         (elevator.getCurrentFloor() == elevator.getTopFloor()) || (elevator.getCurrentFloor() >= elevator.highestReqFloor())) {
-                elevator.setCurrentDirection(elevator.DIRECTION_DOWN);
+                elevator.setCurrentDirection(Elevator.DIRECTION_DOWN);
             }
             
 
             //If all passengers are at their destinations, return empty to the lobby.
             if (passengersDone.size() == passengersAll.size()) {
                 if (elevator.getCurrentFloor() != elevator.LOBBY) {
-                    elevator.requestFloor(elevator.LOBBY);
-                    elevator.setCurrentDirection(elevator.DIRECTION_DOWN);
+                    elevator.requestFloor(elevator.LOBBY, FloorRequest.REQUEST_AUTO);
+                    elevator.setCurrentDirection(Elevator.DIRECTION_DOWN);
                 }
             }
             
@@ -152,6 +164,25 @@ public class Process {
         
         
         return done;
+    }
+    
+    private boolean psngrGoingSameWay(Passenger passenger) {
+        boolean result = false;
+        
+        int floorDiff = passenger.getDesiredFloor() - passenger.getCurrentFloor();
+        int whichWay = -100;
+        if (floorDiff < 0) {
+            whichWay = Elevator.DIRECTION_DOWN;
+        }
+        else if (floorDiff > 0) {
+            whichWay = Elevator.DIRECTION_UP;
+        }
+        
+        if (whichWay == elevator.getCurrentDirection()) {
+            result = true;
+        }
+        
+        return result;
     }
     
 }

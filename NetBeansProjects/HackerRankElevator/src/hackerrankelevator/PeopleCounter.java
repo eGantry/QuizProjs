@@ -25,9 +25,17 @@ public class PeopleCounter {
         peopleCount = 0;
     }
     
-    public void reportCount(String activity) {
+    public void reportCount(String activity, int floor) {
         String folksWord = "people";
         String verbPlural = "";
+        String whichWay;
+        
+        if (activity.equals("enter")) {
+            whichWay = "from";
+        }
+        else {
+            whichWay = "onto";
+        }
         
         if (peopleCount == 1) {
             folksWord = "person";
@@ -35,7 +43,12 @@ public class PeopleCounter {
         }
         
         if (peopleCount > 0) {
-            System.out.println(peopleCount + " " + folksWord + " " + activity + verbPlural + " the elevator.");
+            if (floor == 0) {
+                System.out.println(peopleCount + " " + folksWord + " " + activity + verbPlural + " the elevator " + whichWay + " Lobby.");
+             }
+            else {
+                System.out.println(peopleCount + " " + folksWord + " " + activity + verbPlural + " the elevator " + whichWay + " floor " + floor + ".");
+            }
         }
     }
 }
