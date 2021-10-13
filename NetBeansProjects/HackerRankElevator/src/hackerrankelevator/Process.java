@@ -50,7 +50,7 @@ public class Process {
         passengersDone = new ArrayList<>();      //Process ends when other two passenger lists are empty and all passengers are here.
         passengersAll = new ArrayList<>();       //All passengers are here throughout Process.
 
-        elevator = new Elevator(3, 20);
+        elevator = new Elevator(1, 20);
         peopleCounter = new PeopleCounter();
         passenger = new Passenger[3];
         passenger[0] = new Passenger(0, 4);
@@ -68,27 +68,34 @@ public class Process {
     public boolean processAllPassengers() {
         boolean done = false;
         
-        //Identify all waiting passengers, and call the elevator for all of them.
-        for (Passenger eachPassenger : passengersAll) {
-            if (eachPassenger.getCurrentFloor() != eachPassenger.getDesiredFloor()) {
-                passengersWaiting.add(eachPassenger);
+
+            //Identify all waiting passengers, and call the elevator for all of them, in case any were left still waiting.
+            for (Passenger eachPassenger : passengersAll) {
+                if (eachPassenger.getCurrentFloor() != eachPassenger.getDesiredFloor()) {
+                    if (!passengersWaiting.contains(eachPassenger)) {
+                        passengersWaiting.add(eachPassenger);
+                    }
+                }
+            }
+            
+            while ((passengersDone.size() < passengersAll.size()) || elevator.getCurrentFloor() != elevator.LOBBY) {
+            
+            //Call the elevator for all waiting passengers, in case any were left still waiting due to elevator capacity.
+            for (Passenger eachPassenger : passengersWaiting) {
                 int floorDiff = eachPassenger.getDesiredFloor() - eachPassenger.getCurrentFloor();
                 int whichWay = 0;
-                
+
                 if (floorDiff > 0) {
                     whichWay = Elevator.DIRECTION_UP;
                 }
                 else if (floorDiff < 0) {
                     whichWay = Elevator.DIRECTION_DOWN;
                 }
-                
-                
+
                 elevator.requestFloor(eachPassenger.getCurrentFloor(), whichWay);
+
             }
-        }
         
-        while ((passengersDone.size() < passengersAll.size()) || elevator.getCurrentFloor() != elevator.LOBBY) {
-            
             //Get elevator moving if it is stopped.
             if (elevator.getCurrentDirection() == Elevator.DIRECTION_STOPPED) {
                 if (elevator.getCurrentFloor() == elevator.LOBBY) {
@@ -98,7 +105,6 @@ public class Process {
                     elevator.setCurrentDirection(Elevator.DIRECTION_DOWN);
                 }
             }
-
 
             //Let out any passengers from the lift who have requested this floor.
             elevator.clearCurrentFloor();
@@ -115,18 +121,20 @@ public class Process {
             
            
             //Board any waiting passengers onto elevator from its current floor.
-            elevator.clearCurrentFloor();
             peopleCounter.resetCount();
             for (int whichPassenger = passengersWaiting.size() -1; whichPassenger >= 0; whichPassenger--) {
                 Passenger eachPassenger = passengersWaiting.get(whichPassenger);
                 if ((eachPassenger.getCurrentFloor() == elevator.getCurrentFloor()) && psngrGoingSameWay(eachPassenger)) {
-                    passengersInLift.add(eachPassenger);
-                    passengersWaiting.remove(eachPassenger);
-                    peopleCounter.incrementCount();
+                    if (passengersInLift.size() < elevator.getMaxPassengers()) {
+                        passengersInLift.add(eachPassenger);
+                        passengersWaiting.remove(eachPassenger);
+                        peopleCounter.incrementCount();
+                    }
                 }
             }
             peopleCounter.reportCount("enter", elevator.getCurrentFloor());
-            FloorRequest fr;
+
+
             //Get all in-lift passengers' floor requests.
             for (Passenger eachPassenger : passengersInLift) {
                 elevator.requestFloor(eachPassenger.getDesiredFloor(), FloorRequest.REQUEST_FLOOR_NUMBER);
@@ -135,13 +143,17 @@ public class Process {
             //Clear any pending requests for the current floor.
             elevator.clearFloorRequests(elevator.getCurrentFloor());
 
-//            elevator.nextFloor();
-            
             //If going UP, and the current floor is the top floor, or the highest requested floor, 
             //switch directions to DOWN.
             if (elevator.getCurrentDirection() == Elevator.DIRECTION_UP && 
                         (elevator.getCurrentFloor() == elevator.getTopFloor()) || (elevator.getCurrentFloor() >= elevator.highestReqFloor())) {
                 elevator.setCurrentDirection(Elevator.DIRECTION_DOWN);
+            }
+            //If going DOWN, and the current floor is the Lobby,  
+            //switch directions to UP.
+            if (elevator.getCurrentDirection() == Elevator.DIRECTION_DOWN && 
+                        (elevator.getCurrentFloor() == elevator.LOBBY)) {
+                elevator.setCurrentDirection(Elevator.DIRECTION_STOPPED);
             }
             
 
@@ -153,6 +165,7 @@ public class Process {
                 }
             }
             
+            elevator.clearCurrentFloor();
             elevator.nextFloor();
             
             //If all passengers are at their destinations, and we're back at the Lobby, set the Doine state.
