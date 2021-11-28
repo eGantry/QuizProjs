@@ -50,17 +50,17 @@ public class Process {
         passengersDone = new ArrayList<>();      //Process ends when other two passenger lists are empty and all passengers are here.
         passengersAll = new ArrayList<>();       //All passengers are here throughout Process.
 
-        elevator = new Elevator(1, 20);
+        elevator = new Elevator(7, 20);
         peopleCounter = new PeopleCounter();
-        passenger = new Passenger[3];
-        passenger[0] = new Passenger(0, 4);
-        passenger[1] = new Passenger(0, 18);
-        passenger[2] = new Passenger(4, 2);
+        int [][] psgrs = {{0, 18},{5, 17},{0, 15},{0, 11},{0, 7},{0, 15},{9, 18},{0, 15},{4, 12},{0, 15},
+                {0, 8},{0, 15},{0, 15},{17, 3},{0, 15},{0, 9},{0, 15},{0, 9},{8, 15},{8, 5}};
         
-        passengersAll.add(passenger[0]);
-        passengersAll.add(passenger[1]);
-        passengersAll.add(passenger[2]);
-        
+        passenger = new Passenger[20];
+        for (int whichPsgr = 0; whichPsgr < psgrs.length; whichPsgr++) {
+            int [] eachPsgr = psgrs[whichPsgr];
+            passenger[whichPsgr] = new Passenger(eachPsgr[0], eachPsgr[1]);
+            passengersAll.add(passenger[whichPsgr]);
+         }
         
     }
     
