@@ -9,15 +9,16 @@ To set it up:
 1. Create a Gradle project.
 2. Replace the `build.gradle` or `build.gradle.kts` files with appropriate configurations for Java Swing development.
 3. Later adapt the project for Android by adjusting dependencies and modules.
-*/
-
+ */
 // Calculator Front-End (Swing UI)
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
 public class CalculatorUI {
+
     private CalculatorBackend backend;
+    private boolean solved = false;
 
     public CalculatorUI(CalculatorBackend backend) {
         this.backend = backend;
@@ -28,41 +29,50 @@ public class CalculatorUI {
         JFrame frame = new JFrame("Calculator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(400, 600);
+        frame.setLocationRelativeTo(null); // Center the calculator on the screen
 
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
 
-        JTextField display = new JTextField();
+        JTextField display = new JTextField("0");
         display.setFont(new Font("Arial", Font.PLAIN, 24));
         display.setHorizontalAlignment(JTextField.RIGHT);
         panel.add(display, BorderLayout.NORTH);
 
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(6, 4, 5, 5));
+        buttonPanel.setLayout(new GridLayout(9, 4, 5, 5)); // Adjusted to 4 columns
 
-        // Basic calculator buttons
-        String[] buttons = {"7", "8", "9", "+",
-                            "4", "5", "6", "-",
-                            "1", "2", "3", "*",
-                            "C", "0", "=", "/",
-                            "(", ")", "^", "√",
-                            "."}; // Added decimal point button
-        for (String text : buttons) {
+        // Top row buttons
+        String[] topRowButtons = {"", "", "", "C"};
+        for (String text : topRowButtons) {
+            JButton button = new JButton(text);
+            button.setFont(new Font("Arial", Font.PLAIN, 18));
+            if (text.equals("C")) {
+                button.addActionListener((ActionEvent e) -> {
+                    display.setText("0");
+                    solved = false;
+                });
+                buttonPanel.add(button);
+            } else {
+                buttonPanel.add(new JLabel(""));
+            }
+        }
+
+        // Second row buttons (Exponent, Root, Parentheses)
+        String[] secondRowButtons = {"^", "√", "(", ")"};
+        for (String text : secondRowButtons) {
             JButton button = new JButton(text);
             button.setFont(new Font("Arial", Font.PLAIN, 18));
             button.addActionListener((ActionEvent e) -> {
-                if (text.equals("C")) {
-                    display.setText("");
+                if (solved) {
+                    display.setText(text);
+                    solved = false;
                 } else {
-                    if (text.equals(".")) {
-                        String currentText = display.getText();
-                        String[] parts = currentText.split("[^0-9.]+"); // Split by non-numeric characters
-                        String lastNumber = parts.length > 0 ? parts[parts.length - 1] : "";
-                        if (!lastNumber.contains(".")) {
-                            display.setText(currentText + text);
-                        }
+                    String currentText = display.getText();
+                    if (currentText.equals("0")) {
+                        display.setText(text);
                     } else {
-                        display.setText(display.getText() + text);
+                        display.setText(currentText + text);
                     }
                 }
             });
@@ -74,22 +84,90 @@ public class CalculatorUI {
             JButton button = new JButton(String.valueOf(variable));
             button.setFont(new Font("Arial", Font.PLAIN, 18));
             button.addActionListener((ActionEvent e) -> {
-                display.setText(display.getText() + button.getText());
+                String currentText = display.getText();
+                if (solved) {
+                    display.setText(button.getText());
+                    solved = false;
+                } else {
+                    if (currentText.equals("0")) {
+                        display.setText(button.getText());
+                    } else {
+                        display.setText(currentText + button.getText());
+                    }
+                }
             });
             buttonPanel.add(button);
         }
 
-        panel.add(buttonPanel, BorderLayout.CENTER);
+        // Add spacers for variable row
+        for (int i = 0; i < 2; i++) {
+            if (i == 0) {
+                JButton button = new JButton("=");
+                button.setFont(new Font("Arial", Font.PLAIN, 18));
+                button.addActionListener((ActionEvent e) -> {
+                    String currentText = display.getText();
+                    if (solved) {
+                        display.setText(button.getText());
+                        solved = false;
+                    } else {
+                        if (currentText.equals("0")) {
+                            display.setText(button.getText());
+                        } else {
+                            display.setText(currentText + button.getText());
+                        }
+                    }
+                });
+                buttonPanel.add(button);
+            } else {
+                buttonPanel.add(new JLabel(""));
+            }
+        }
 
-        // Add "Solve" button
-        JButton solveButton = new JButton("Solve");
-        solveButton.setFont(new Font("Arial", Font.BOLD, 18));
-        solveButton.addActionListener((ActionEvent e) -> {
-            String input = display.getText();
-            String result = backend.solveEquation(input);
-            display.setText(result);
-        });
-        panel.add(solveButton, BorderLayout.SOUTH);
+        // Number and operator rows
+        String[][] rows = {
+            {"7", "8", "9", "/"},
+            {"4", "5", "6", "*"},
+            {"1", "2", "3", "-"},
+            {"0", ".", "Solve", "+"}
+        };
+
+        for (String[] row : rows) {
+            for (String text : row) {
+                JButton button = new JButton(text);
+                button.setFont(new Font("Arial", Font.PLAIN, 18));
+                button.addActionListener((ActionEvent e) -> {
+                    String currentText = display.getText();
+                    if (text.equals("Solve")) {
+                        String input = display.getText();
+                        if (input.equals("0")) {
+                            display.setText("0");
+                        } else {
+                            String result = backend.solveEquation(input);
+                            display.setText(result);
+                            solved = true;
+                        }
+                    } else {
+                        if (solved) {
+                            if (text.matches("[0-9]") || text.equals(".")) {
+                                display.setText(text);
+                            } else {
+                                display.setText(currentText + text);
+                            }
+                            solved = false;
+                        } else {
+                            if (currentText.equals("0") && text.matches("[0-9]")) {
+                                display.setText(text);
+                            } else {
+                                display.setText(currentText + text);
+                            }
+                        }
+                    }
+                });
+                buttonPanel.add(button);
+            }
+        }
+
+        panel.add(buttonPanel, BorderLayout.CENTER);
 
         frame.add(panel);
         frame.setVisible(true);
