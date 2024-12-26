@@ -9,7 +9,10 @@ package com.example.calcsolver;
  * @author quizz
  */
 // Calculator Back-End (Model)
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 public class CalculatorBackend {
 
@@ -38,25 +41,13 @@ public class CalculatorBackend {
         return radicand >= 0 && index != 0 ? Math.pow(radicand, 1.0 / index) : Double.NaN;
     }
 
-    // Method for solving algebraic equations
     public String solveEquation(String equation) {
         if (equation == null || equation.isEmpty()) {
             return "Invalid equation.";
         }
 
-        long variableCount = equation.chars()
-                .filter(Character::isLetter)
-                .distinct()
-                .count();
-
-        if (variableCount > 10) {
-            return "Error: Too many variables. Maximum supported is 10.";
-        }
-
-        if (equation.contains("=")) {
-            // Placeholder: Process algebraic equation
-            return "Solution logic not yet implemented.";
-        } else {
+        // Check for variables and "=" sign
+        if (!equation.contains("=")) {
             try {
                 double result = evaluateExpression(equation);
                 return String.valueOf(result);
@@ -64,6 +55,72 @@ public class CalculatorBackend {
                 return "Error in expression.";
             }
         }
+
+        // Split the equation into LHS and RHS
+        String[] parts = equation.split("=");
+        if (parts.length != 2) {
+            return "Invalid equation format.";
+        }
+
+        String lhs = parts[0].trim();
+        String rhs = parts[1].trim();
+
+        // Extract variables
+        Set<Character> variables = equation.chars()
+                .filter(Character::isLetter)
+                .mapToObj(c -> (char) c)
+                .collect(Collectors.toSet());
+
+        if (variables.size() > 10) {
+            return "Error: Too many variables. Maximum supported is 10.";
+        }
+
+        // If there's only one variable, attempt to isolate and solve it
+        if (variables.size() == 1) {
+            char variable = variables.iterator().next();
+            try {
+                return solveSingleVariableEquation(lhs, rhs, variable);
+            } catch (Exception e) {
+                return "Error solving equation.";
+            }
+        }
+
+        return "Error: Cannot solve for multiple variables.";
+    }
+
+    private String solveSingleVariableEquation(String lhs, String rhs, char variable) {
+        // Move all terms to LHS and rearrange
+        String fullExpression = lhs + "-(" + rhs + ")";
+        String simplified = simplifyExpression(fullExpression);
+
+        // Isolate the variable
+        double coefficient = extractCoefficient(simplified, variable);
+        double constant = extractConstant(simplified);
+
+        if (coefficient == 0) {
+            return "No solution or infinite solutions.";
+        }
+
+        double solution = -constant / coefficient;
+        return variable + " = " + solution;
+    }
+
+    private String simplifyExpression(String expression) {
+        // Use evaluateExpression() or similar parsing logic
+        // Placeholder for symbolic simplification logic
+        return expression; // For now, return the raw expression
+    }
+
+    private double extractCoefficient(String expression, char variable) {
+        // Parse the coefficient of the given variable
+        // Placeholder logic
+        return 1.0;
+    }
+
+    private double extractConstant(String expression) {
+        // Parse the constant terms
+        // Placeholder logic
+        return 0.0;
     }
 
     public double evaluateExpression(String expression) {
