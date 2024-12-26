@@ -40,7 +40,7 @@ public class CalculatorUI {
         panel.add(display, BorderLayout.NORTH);
 
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(9, 4, 5, 5)); // Adjusted to 4 columns
+        buttonPanel.setLayout(new GridLayout(10, 4, 5, 5)); // Adjusted to 4 columns.  Note:  Row count matters.
 
         // Top row buttons
         String[] topRowButtons = {"", "", "", "C"};
@@ -58,17 +58,51 @@ public class CalculatorUI {
             }
         }
 
-        // Second row buttons (Exponent, Root, Parentheses)
+        // Add a row for square, square root, cube, and cube root
+        String[] powerAndRootButtons = {"^2", "2√", "^3", "3√"};
+        for (String text : powerAndRootButtons) {
+            JButton button = new JButton(text);
+            button.setFont(new Font("Arial", Font.PLAIN, 18));
+            button.addActionListener((ActionEvent e) -> {
+                String currentText = display.getText();
+                StringBuilder sbText = new StringBuilder(text);
+                if (sbText.indexOf("√") != -1) {
+                    sbText.reverse();
+                }
+                String scrubbedText = sbText.toString();
+                if (solved) {
+                    if (text.matches("[0-9]") || text.equals(".")) {
+                        display.setText(scrubbedText);
+                    } else {
+                        display.setText(currentText + scrubbedText);
+                    }
+                    solved = false;
+                } else {
+                    if (currentText.equals("0")) {
+                        display.setText(scrubbedText);
+                    } else {
+                        display.setText(currentText + scrubbedText);
+                    }
+                }
+            });
+            buttonPanel.add(button);
+        }
+
+        // Third row buttons (Exponent, Root, Parentheses)
         String[] secondRowButtons = {"^", "√", "(", ")"};
         for (String text : secondRowButtons) {
             JButton button = new JButton(text);
             button.setFont(new Font("Arial", Font.PLAIN, 18));
             button.addActionListener((ActionEvent e) -> {
+                String currentText = display.getText();
                 if (solved) {
-                    display.setText(text);
+                    if (text.matches("[0-9]") || text.equals(".")) {
+                        display.setText(text);
+                    } else {
+                        display.setText(currentText + text);
+                    }
                     solved = false;
                 } else {
-                    String currentText = display.getText();
                     if (currentText.equals("0")) {
                         display.setText(text);
                     } else {
