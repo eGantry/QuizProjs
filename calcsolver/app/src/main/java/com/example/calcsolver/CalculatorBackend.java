@@ -9,9 +9,13 @@ package com.example.calcsolver;
  * @author quizz
  */
 // Calculator Back-End (Model)
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class CalculatorBackend {
@@ -41,140 +45,183 @@ public class CalculatorBackend {
         return radicand >= 0 && index != 0 ? Math.pow(radicand, 1.0 / index) : Double.NaN;
     }
 
+    // Method for solving algebraic equations
     public String solveEquation(String equation) {
         if (equation == null || equation.isEmpty()) {
             return "Invalid equation.";
         }
 
-        // Check for variables and "=" sign
-        if (!equation.contains("=")) {
-            try {
-                double result = evaluateExpression(equation);
-                return String.valueOf(result);
-            } catch (Exception e) {
-                return "Error in expression.";
-            }
-        }
-
         // Split the equation into LHS and RHS
         String[] parts = equation.split("=");
         if (parts.length != 2) {
-            return "Invalid equation format.";
+            return "Error: Invalid equation format.";
         }
 
         String lhs = parts[0].trim();
         String rhs = parts[1].trim();
 
-        // Extract variables
-        Set<Character> variables = equation.chars()
-                .filter(Character::isLetter)
-                .mapToObj(c -> (char) c)
-                .collect(Collectors.toSet());
+        // Simplify both sides
+        lhs = simplifyExpression(lhs);
+        rhs = simplifyExpression(rhs);
 
-        if (variables.size() > 10) {
-            return "Error: Too many variables. Maximum supported is 10.";
-        }
-
-        // If there's only one variable, attempt to isolate and solve it
-        if (variables.size() == 1) {
-            char variable = variables.iterator().next();
-            try {
-                return solveSingleVariableEquation(lhs, rhs, variable);
-            } catch (Exception e) {
-                return "Error solving equation.";
+        // Identify the variable
+        Set<Character> variables = new HashSet<>();
+        for (char c : lhs.toCharArray()) {
+            if (Character.isLetter(c)) {
+                variables.add(c);
             }
         }
 
-        return "Error: Cannot solve for multiple variables.";
-    }
-
-    private String solveSingleVariableEquation(String lhs, String rhs, char variable) {
-        // Move all terms to LHS and rearrange
-        String fullExpression = lhs + "-(" + rhs + ")";
-        String simplified = simplifyExpression(fullExpression);
-
-        // Isolate the variable
-        double coefficient = extractCoefficient(simplified, variable);
-        double constant = extractConstant(simplified);
-
-        if (coefficient == 0) {
-            return "No solution or infinite solutions.";
+        if (variables.size() != 1) {
+            return "Error: Equation must have exactly one variable.";
         }
 
-        double solution = -constant / coefficient;
+        char variable = variables.iterator().next();
+
+        // Extract coefficients and constant from LHS
+        double lhsCoefficient = extractCoefficient(lhs, variable);
+        double lhsConstant = extractConstant(lhs);
+
+        // Evaluate the RHS
+        double rhsValue;
+        try {
+            rhsValue = evaluateExpression(rhs);
+        } catch (Exception e) {
+            return "Error in RHS evaluation.";
+        }
+
+        // Solve for the variable
+        if (lhsCoefficient == 0) {
+            return lhsConstant == rhsValue ? "Infinite solutions." : "No solution.";
+        }
+
+        double solution = (rhsValue - lhsConstant) / lhsCoefficient;
+
         return variable + " = " + solution;
     }
 
-    private String simplifyExpression(String expression) {
-        // Use evaluateExpression() or similar parsing logic
-        // Placeholder for symbolic simplification logic
-        return expression; // For now, return the raw expression
+    // Simplifies an expression by normalizing it
+    public String simplifyExpression(String expression) {
+        expression = expression.replaceAll("\\s", ""); // Remove spaces
+
+        // Normalize by inserting '*' between numbers and variables, and variables and variables
+        expression = expression.replaceAll("(?<=[0-9])(?=[a-zA-Z])", "*"); // Between numbers and variables
+        expression = expression.replaceAll("(?<=[a-zA-Z])(?=[a-zA-Z])", "*"); // Between variables (e.g., 'xy' -> 'x*y')
+        expression = expression.replaceAll("(?<=[a-zA-Z])(?=[0-9])", "*"); // Between variables and numbers
+
+        return expression;
     }
 
-    private double extractCoefficient(String expression, char variable) {
-        // Parse the coefficient of the given variable
-        // Placeholder logic
-        return 1.0;
+    // Extracts the coefficient of the given variable in an expression
+    public double extractCoefficient(String expression, char variable) {
+        expression = expression.replaceAll("\\s", ""); // Remove spaces
+        double coefficient = 0.0;
+        boolean found = false;
+
+        String[] terms = expression.split("(?=[+-])");
+        for (String term : terms) {
+            if (term.indexOf(variable) != -1) {
+                found = true;
+                term = term.replace(String.valueOf(variable), "");
+
+                if (term.isEmpty() || term.equals("+")) {
+                    coefficient += 1;
+                } else if (term.equals("-")) {
+                    coefficient -= 1;
+                } else {
+                    coefficient += Double.parseDouble(term.replace("*", ""));
+                }
+            }
+        }
+
+        return found ? coefficient : 0.0;
     }
 
-    private double extractConstant(String expression) {
-        // Parse the constant terms
-        // Placeholder logic
-        return 0.0;
+    // Extracts the constant from an expression
+    public double extractConstant(String expression) {
+        expression = expression.replaceAll("\\s", ""); // Remove spaces
+        double constant = 0.0;
+
+        String[] terms = expression.split("(?=[+-])");
+        for (String term : terms) {
+            if (!term.matches(".*[a-zA-Z].*")) {
+                constant += Double.parseDouble(term);
+            }
+        }
+
+        return constant;
     }
 
+// Method for evaluating expressions with parentheses, exponents, and roots
     public double evaluateExpression(String expression) {
         try {
-            // Convert infix expression to postfix
+            // Convert infix to postfix for proper evaluation
             String postfix = infixToPostfix(expression);
-            // Evaluate postfix expression
             return evaluatePostfix(postfix);
         } catch (Exception e) {
+            System.err.println("Error in expression evaluation: " + e.getMessage());
             return Double.NaN;
         }
     }
 
+// Infix to Postfix Conversion
     private String infixToPostfix(String expression) {
-        StringBuilder output = new StringBuilder();
         Stack<Character> operators = new Stack<>();
-        String operatorsList = "+-*/^√";
+        StringBuilder postfix = new StringBuilder();
 
         for (int i = 0; i < expression.length(); i++) {
             char c = expression.charAt(i);
 
+            // If the character is a digit or '.', include it in the postfix string
             if (Character.isDigit(c) || c == '.') {
-                // Append numbers and decimals directly to the output
-                output.append(c);
-            } else if (Character.isLetter(c)) {
-                // Append variables directly to the output
-                output.append(c);
+                postfix.append(c);
             } else if (c == '(') {
-                // Push opening parenthesis onto the stack
                 operators.push(c);
             } else if (c == ')') {
-                // Pop from stack to output until opening parenthesis
+                // Pop from stack until '(' is encountered
                 while (!operators.isEmpty() && operators.peek() != '(') {
-                    output.append(' ').append(operators.pop());
+                    postfix.append(' ').append(operators.pop());
                 }
-                if (!operators.isEmpty() && operators.peek() == '(') {
-                    operators.pop(); // Remove the '('
-                }
-            } else if (operatorsList.indexOf(c) >= 0) {
-                // Handle operators
+                operators.pop(); // Remove '('
+            } else if (isOperator(c)) {
+                // Add space before operator and pop higher precedence operators
+                postfix.append(' ');
                 while (!operators.isEmpty() && precedence(operators.peek()) >= precedence(c)) {
-                    output.append(' ').append(operators.pop());
+                    postfix.append(operators.pop()).append(' ');
                 }
-                output.append(' ');
                 operators.push(c);
             }
         }
 
-        // Append remaining operators
+        // Pop remaining operators
         while (!operators.isEmpty()) {
-            output.append(' ').append(operators.pop());
+            postfix.append(' ').append(operators.pop());
         }
 
-        return output.toString();
+        return postfix.toString().trim();
+    }
+
+// Postfix Evaluation
+    private double evaluatePostfix(String postfix) {
+        Stack<Double> operands = new Stack<>();
+        String[] tokens = postfix.split("\\s+");
+
+        for (String token : tokens) {
+            if (isNumeric(token)) {
+                operands.push(Double.parseDouble(token));
+            } else {
+                // Pop operands for operation
+                double b = operands.pop();
+                double a = operands.isEmpty() ? 0 : operands.pop(); // Handles unary operators
+                operands.push(performOperation(a, b, token));
+            }
+        }
+
+        return operands.pop();
+    }
+
+    private boolean isOperator(char c) {
+        return c == '+' || c == '-' || c == '*' || c == '/' || c == '^' || c == '√';
     }
 
     private int precedence(char operator) {
@@ -190,26 +237,12 @@ public class CalculatorBackend {
         };
     }
 
-    private double evaluatePostfix(String postfix) {
-        Stack<Double> operands = new Stack<>();
-        String[] tokens = postfix.split("\\s+");
-
-        for (String token : tokens) {
-            if (token.matches("-?\\d+(\\.\\d+)?")) {
-                // Push numbers onto the stack
-                operands.push(Double.parseDouble(token));
-            } else if (token.matches("[A-Za-z]")) {
-                // Handle variables (currently unsupported; placeholder)
-                throw new UnsupportedOperationException("Variable evaluation not yet implemented.");
-            } else {
-                // Pop operands for operator evaluation
-                double operand2 = operands.pop();
-                double operand1 = operands.isEmpty() ? 0 : operands.pop(); // Handles unary operators
-                double result = performOperation(operand1, operand2, token);
-                operands.push(result);
-            }
+    private boolean isNumeric(String str) {
+        try {
+            Double.parseDouble(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
         }
-
-        return operands.pop();
     }
 }
