@@ -27,9 +27,11 @@ repositories {
 }
 
 dependencies {
-    // No external dependencies are required for the current implementation
     // If you later need additional libraries, add them here
     // e.g., implementation 'com.google.guava:guava:31.1-jre'
+    implementation 'org.matheclipse:matheclipse-core:3.0.0' // Ensure this version matches the latest stable version
+    implementation 'org.matheclipse:matheclipse-parser:3.0.0'
+
 }
 
 tasks.withType(JavaCompile) {

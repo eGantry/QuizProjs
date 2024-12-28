@@ -113,8 +113,8 @@ public class CalculatorUI {
             buttonPanel.add(button);
         }
 
-        // Variable buttons (M through V)
-        for (char variable = 'M'; variable <= 'V'; variable++) {
+        // Variable buttons (m through v)
+        for (char variable = 'm'; variable <= 'v'; variable++) {
             JButton button = new JButton(String.valueOf(variable));
             button.setFont(new Font("Arial", Font.PLAIN, 18));
             button.addActionListener((ActionEvent e) -> {
@@ -134,27 +134,24 @@ public class CalculatorUI {
         }
 
         // Add spacers for variable row
-        for (int i = 0; i < 2; i++) {
-            if (i == 0) {
-                JButton button = new JButton("=");
-                button.setFont(new Font("Arial", Font.PLAIN, 18));
-                button.addActionListener((ActionEvent e) -> {
-                    String currentText = display.getText();
-                    if (solved) {
+        String symbols[] = {"=", ","};
+        for (int whichButton = 0; whichButton < 2; whichButton++) {
+            JButton button = new JButton(symbols[whichButton]);
+            button.setFont(new Font("Arial", Font.PLAIN, 18));
+            button.addActionListener((ActionEvent e) -> {
+                String currentText = display.getText();
+                if (solved) {
+                    display.setText(button.getText());
+                    solved = false;
+                } else {
+                    if (currentText.equals("0")) {
                         display.setText(button.getText());
-                        solved = false;
                     } else {
-                        if (currentText.equals("0")) {
-                            display.setText(button.getText());
-                        } else {
-                            display.setText(currentText + button.getText());
-                        }
+                        display.setText(currentText + button.getText());
                     }
-                });
-                buttonPanel.add(button);
-            } else {
-                buttonPanel.add(new JLabel(""));
-            }
+                }
+            });
+            buttonPanel.add(button);
         }
 
         // Number and operator rows
@@ -176,7 +173,7 @@ public class CalculatorUI {
                         if (input.equals("0")) {
                             display.setText("0");
                         } else {
-                            String result = backend.solveEquation(input);
+                            String result = backend.solveProblem(input);
                             display.setText(result);
                             solved = true;
                         }
