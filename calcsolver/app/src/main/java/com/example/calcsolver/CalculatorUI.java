@@ -40,7 +40,7 @@ public class CalculatorUI {
         panel.add(display, BorderLayout.NORTH);
 
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(10, 4, 5, 5)); // Adjusted to 4 columns.  Note:  Row count matters.
+        buttonPanel.setLayout(new GridLayout(11, 4, 5, 5)); // Adjusted to 4 columns.  Note:  Row count matters.
 
         // Top row buttons
         String[] topRowButtons = {"", "", "", "C"};
@@ -89,8 +89,33 @@ public class CalculatorUI {
         }
 
         // Third row buttons (Exponent, Root, Parentheses)
-        String[] secondRowButtons = {"^", "√", "(", ")"};
-        for (String text : secondRowButtons) {
+        String[] thirdRowButtons = {"^", "√", "(", ")"};
+        for (String text : thirdRowButtons) {
+            JButton button = new JButton(text);
+            button.setFont(new Font("Arial", Font.PLAIN, 18));
+            button.addActionListener((ActionEvent e) -> {
+                String currentText = display.getText();
+                if (solved) {
+                    if (text.matches("[0-9]") || text.equals(".")) {
+                        display.setText(text);
+                    } else {
+                        display.setText(currentText + text);
+                    }
+                    solved = false;
+                } else {
+                    if (currentText.equals("0")) {
+                        display.setText(text);
+                    } else {
+                        display.setText(currentText + text);
+                    }
+                }
+            });
+            buttonPanel.add(button);
+        }
+
+        // Fourth row buttons (Comparison, Not, and Equals, so user can enter comparisons like "!=" and ">=")
+        String[] fourthRowButtons = {"<", ">", "!", "="};
+        for (String text : fourthRowButtons) {
             JButton button = new JButton(text);
             button.setFont(new Font("Arial", Font.PLAIN, 18));
             button.addActionListener((ActionEvent e) -> {
@@ -134,7 +159,7 @@ public class CalculatorUI {
         }
 
         // Add spacers for variable row
-        String symbols[] = {"=", ","};
+        String symbols[] = {"==", ","};
         for (int whichButton = 0; whichButton < 2; whichButton++) {
             JButton button = new JButton(symbols[whichButton]);
             button.setFont(new Font("Arial", Font.PLAIN, 18));
