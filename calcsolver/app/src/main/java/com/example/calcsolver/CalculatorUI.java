@@ -43,7 +43,7 @@ public class CalculatorUI {
         buttonPanel.setLayout(new GridLayout(11, 4, 5, 5)); // Adjusted to 4 columns.  Note:  Row count matters.
 
         // Top row buttons
-        String[] topRowButtons = {"", "", "", "C"};
+        String[] topRowButtons = {"", "", "←", "C"};
         for (String text : topRowButtons) {
             JButton button = new JButton(text);
             button.setFont(new Font("Arial", Font.PLAIN, 18));
@@ -51,6 +51,18 @@ public class CalculatorUI {
                 button.addActionListener((ActionEvent e) -> {
                     display.setText("0");
                     solved = false;
+                });
+                buttonPanel.add(button);
+            } else if (text.equals("←")) {
+                button.addActionListener((ActionEvent e) -> {
+                    String currentText = display.getText();
+                    if (!solvedText(currentText)) {
+                        String editedText = currentText.substring(0, currentText.length() - 1);
+                        if (editedText.isEmpty()) {
+                            editedText = "0";
+                        }
+                        display.setText(editedText);
+                    }
                 });
                 buttonPanel.add(button);
             } else {
@@ -78,7 +90,7 @@ public class CalculatorUI {
                     }
                     solved = false;
                 } else {
-                    if (currentText.equals("0")) {
+                    if (solvedText(currentText)) {
                         display.setText(scrubbedText);
                     } else {
                         display.setText(currentText + scrubbedText);
@@ -103,7 +115,7 @@ public class CalculatorUI {
                     }
                     solved = false;
                 } else {
-                    if (currentText.equals("0")) {
+                    if (solvedText(currentText)) {
                         display.setText(text);
                     } else {
                         display.setText(currentText + text);
@@ -128,10 +140,19 @@ public class CalculatorUI {
                     }
                     solved = false;
                 } else {
-                    if (currentText.equals("0")) {
-                        display.setText(text);
+                    if (solvedText(currentText)) {
+//                        display.setText(text);
                     } else {
-                        display.setText(currentText + text);
+                        //If user clicks "=", it concatenates normally if it follows "!", "<" or ">".  Otherwise, it doubly concatenates, for "==".
+                        if (text.equals("=")) {
+                            if ((currentText.endsWith("<")) || (currentText.endsWith(">")) || (currentText.endsWith("!"))) {
+                                display.setText(currentText + text);
+                            } else {
+                                display.setText(currentText + text + text);
+                            }
+                        } else {
+                            display.setText(currentText + text);
+                        }
                     }
                 }
             });
@@ -148,7 +169,7 @@ public class CalculatorUI {
                     display.setText(button.getText());
                     solved = false;
                 } else {
-                    if (currentText.equals("0")) {
+                    if (solvedText(currentText)) {
                         display.setText(button.getText());
                     } else {
                         display.setText(currentText + button.getText());
@@ -166,11 +187,11 @@ public class CalculatorUI {
             button.addActionListener((ActionEvent e) -> {
                 String currentText = display.getText();
                 if (solved) {
-                    display.setText(button.getText());
-                    solved = false;
+//                    display.setText(button.getText());
+//                    solved = false;
                 } else {
-                    if (currentText.equals("0")) {
-                        display.setText(button.getText());
+                    if (solvedText(currentText)) {
+//                        display.setText(button.getText());
                     } else {
                         display.setText(currentText + button.getText());
                     }
@@ -206,12 +227,12 @@ public class CalculatorUI {
                         if (solved) {
                             if (text.matches("[0-9]") || text.equals(".")) {
                                 display.setText(text);
+                                solved = false;
                             } else {
-                                display.setText(currentText + text);
+//                                display.setText(currentText + text);
                             }
-                            solved = false;
                         } else {
-                            if (currentText.equals("0") && text.matches("[0-9]")) {
+                            if (solvedText(currentText) && text.matches("[0-9]")) {
                                 display.setText(text);
                             } else {
                                 display.setText(currentText + text);
@@ -227,6 +248,16 @@ public class CalculatorUI {
 
         frame.add(panel);
         frame.setVisible(true);
+    }
+
+    private boolean solvedText(String currentText) {
+        boolean result = false;
+
+        if ((currentText.equals("0")) || (currentText.contains("Result")) || (currentText.contains("Solutions"))) {
+            result = true;
+        }
+
+        return result;
     }
 
     public static void main(String[] args) {
