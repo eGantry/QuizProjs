@@ -18,6 +18,7 @@ public class RevisedUI {
     private JTextArea display;
     private JPanel mainBtnPanel;
     private JPanel varBtnPanel;
+    private boolean solved = false;
 
     public RevisedUI() {
         mainPanel = new JFrame("Algebrator");
@@ -28,6 +29,7 @@ public class RevisedUI {
 
         // Display Area
         display = new JTextArea(4, 30);
+        display.setText("0");
         display.setFont(new Font("Arial", Font.PLAIN, 18));
         display.setLineWrap(true);
         display.setWrapStyleWord(true);
@@ -98,9 +100,9 @@ public class RevisedUI {
     }
 
     private void addFunctionButtons() {
-        String[] buttons = {"←", "C", "^", "√", "^2", "2√", "^3", "3√",
-            "<", ">", "!", "=", "==", ",",
-            "(", ")"};
+        String[] buttons = {"^", "√", "^2", "2√", "^3", "3√",
+            "<", "<=", ">=", ">", "!=", "==",
+            "(", ")", ","};
 
         for (String text : buttons) {
             JButton button = new JButton(text);
@@ -118,24 +120,87 @@ public class RevisedUI {
         if (null == text) {
             display.append(text);
         } else {
+            String currentText = display.getText();
             switch (text) {
-                case "←" -> {
-                    String currentText = display.getText();
-                    if (!currentText.isEmpty()) {
-                        display.setText(currentText.substring(0, currentText.length() - 1));
-                    }
-                }
                 case "C" -> {
                     //Clear the value from the display.
+                    display.setText("0");
+                    solved = false;
                 }
                 case "Solve" -> {
                     //Call the backend to solve the current expression
                 }
+                case "←" -> {
+                    if (!currentText.isEmpty()) {
+                        display.setText(currentText.substring(0, currentText.length() - 1));
+                    }
+                }
+                case "2√" -> {
+                    //Reverse square root
+//                    display.setText(currentText + reverseText(text));
+                    updateDisplay(reverseText(text));
+                }
+                case "3√" -> {
+                    //Reverse cubed root
+//                    display.setText(currentText + reverseText(text));
+                    updateDisplay(reverseText(text));
+                }
+                case "=" -> {
+                    //Decide whether to append the equal sign based on last byte in display.
+                    if ((currentText.endsWith("<")) || (currentText.endsWith(">")) || (currentText.endsWith("!"))) {
+//                        display.setText(currentText + text);
+                        updateDisplay(text);
+                    } else {
+//                        display.setText(currentText + text + text);
+                        updateDisplay(text + text);
+                    }
+                }
                 default ->
-                    display.append(text);
+                    updateDisplay(text);
             }
         }
 
+    }
+
+    private String reverseText(String textToReverse) {
+        String result;
+
+        StringBuilder sbText = new StringBuilder(textToReverse);
+        sbText.reverse();
+        result = sbText.toString();
+
+        return result;
+    }
+
+    private void updateDisplay(String buttonText) {
+
+        String displayText = display.getText();
+        
+        if (solved) {
+            if (buttonText.matches("[0-9]") || buttonText.equals(".")) {
+                display.setText(buttonText);
+            } else {
+                display.setText(displayText + buttonText);
+            }
+            solved = false;
+        } else {
+            if (solvedText(displayText)) {
+                display.setText(buttonText);
+            } else {
+                display.setText(displayText + buttonText);
+            }
+        }
+
+    }
+
+    private boolean solvedText(String currentText) {
+        boolean result = false;
+
+        if ((currentText.equals("0")) || (currentText.contains("Result")) || (currentText.contains("Solutions"))) {
+            result = true;
+        }
+
+        return result;
     }
 
     public static void main(String[] args) {
