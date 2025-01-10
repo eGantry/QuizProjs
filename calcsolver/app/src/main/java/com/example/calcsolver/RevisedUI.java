@@ -16,8 +16,8 @@ public class RevisedUI {
 
     private JFrame mainPanel;
     private JTextArea display;
-    private JPanel mainBtnPanel;
-    private JPanel varBtnPanel;
+    private JPanel mathBtns;
+    private JPanel algebraBtns;
     private boolean solved = false;
 
     public RevisedUI() {
@@ -37,29 +37,24 @@ public class RevisedUI {
         JScrollPane displayScroll = new JScrollPane(display);
         mainPanel.add(displayScroll, BorderLayout.NORTH);
 
-        // Variable Button Panel
-        varBtnPanel = new JPanel();
-        varBtnPanel.setLayout(new GridLayout(10, 6, 3, 3)); // 5 rows, 6 columns
+        // Algebra & Equation Button Panel
+        algebraBtns = new JPanel();
+        algebraBtns.setLayout(new GridLayout(10, 6, 3, 3)); // 5 rows, 6 columns
         addTopButtons();
-        addVariableButtons();
-        addFunctionButtons();
-        mainPanel.add(varBtnPanel, BorderLayout.CENTER);
+        addAlgebraButtons();
+        addEquationButtons();
+        mainPanel.add(algebraBtns, BorderLayout.CENTER);
 
-//        // Function Button Panel
-//        funcBtnPanel = new JPanel();
-//        funcBtnPanel.setLayout(new GridLayout(3, 6, 3, 3)); // 5 rows, 6 columns
-//        addFunctionButtons();
-//        mainPanel.add(funcBtnPanel, BorderLayout.CENTER);
-        // Main Button Panel
-        mainBtnPanel = new JPanel();
-        mainBtnPanel.setLayout(new GridLayout(4, 4, 4, 4)); // 5 rows, 4 columns, with gaps
-        addMainButtons();
-        mainPanel.add(mainBtnPanel, BorderLayout.SOUTH);
+        // Math Button Panel
+        mathBtns = new JPanel();
+        mathBtns.setLayout(new GridLayout(4, 4, 4, 4)); // 5 rows, 4 columns, with gaps
+        addMathButtons();
+        mainPanel.add(mathBtns, BorderLayout.SOUTH);
 
         mainPanel.setVisible(true);
     }
 
-    private void addMainButtons() {
+    private void addMathButtons() {
         String[] buttons = {"7", "8", "9", "/",
             "4", "5", "6", "*",
             "1", "2", "3", "-",
@@ -69,16 +64,16 @@ public class RevisedUI {
             JButton button = new JButton(text);
             button.setFont(new Font("Arial", Font.PLAIN, 18));
             button.addActionListener(this::handleButtonPress);
-            mainBtnPanel.add(button);
+            mathBtns.add(button);
         }
     }
 
-    private void addVariableButtons() {
+    private void addAlgebraButtons() {
         for (char c = 'a'; c <= 'z'; c++) {
             JButton button = new JButton(String.valueOf(c));
             button.setFont(new Font("Arial", Font.PLAIN, 14)); // Smaller font for variable buttons
             button.addActionListener(this::handleButtonPress);
-            varBtnPanel.add(button);
+            algebraBtns.add(button);
         }
     }
 
@@ -90,16 +85,16 @@ public class RevisedUI {
                 JButton button = new JButton(text);
                 button.setFont(new Font("Arial", Font.PLAIN, 14));
                 button.addActionListener(this::handleButtonPress);
-                varBtnPanel.add(button);
+                algebraBtns.add(button);
             } else {
                 JLabel label = new JLabel();
-                varBtnPanel.add(label);
+                algebraBtns.add(label);
             }
         }
 
     }
 
-    private void addFunctionButtons() {
+    private void addEquationButtons() {
         String[] buttons = {"^", "√", "^2", "2√", "^3", "3√",
             "<", "<=", ">=", ">", "!=", "==",
             "(", ")", ","};
@@ -108,7 +103,7 @@ public class RevisedUI {
             JButton button = new JButton(text);
             button.setFont(new Font("Arial", Font.PLAIN, 14));
             button.addActionListener(this::handleButtonPress);
-            varBtnPanel.add(button);
+            algebraBtns.add(button);
         }
 
     }
@@ -137,23 +132,11 @@ public class RevisedUI {
                 }
                 case "2√" -> {
                     //Reverse square root
-//                    display.setText(currentText + reverseText(text));
                     updateDisplay(reverseText(text));
                 }
                 case "3√" -> {
                     //Reverse cubed root
-//                    display.setText(currentText + reverseText(text));
                     updateDisplay(reverseText(text));
-                }
-                case "=" -> {
-                    //Decide whether to append the equal sign based on last byte in display.
-                    if ((currentText.endsWith("<")) || (currentText.endsWith(">")) || (currentText.endsWith("!"))) {
-//                        display.setText(currentText + text);
-                        updateDisplay(text);
-                    } else {
-//                        display.setText(currentText + text + text);
-                        updateDisplay(text + text);
-                    }
                 }
                 default ->
                     updateDisplay(text);
@@ -175,22 +158,83 @@ public class RevisedUI {
     private void updateDisplay(String buttonText) {
 
         String displayText = display.getText();
-        
+
         if (solved) {
             if (buttonText.matches("[0-9]") || buttonText.equals(".")) {
                 display.setText(buttonText);
             } else {
-                display.setText(displayText + buttonText);
+                //Prevent user from entering an endless succession of operators.
+                preventEndlessOps(buttonText);
             }
             solved = false;
         } else {
             if (solvedText(displayText)) {
                 display.setText(buttonText);
             } else {
-                display.setText(displayText + buttonText);
+                //Prevent user from entering an endless succession of operators.
+                preventEndlessOps(buttonText);
             }
         }
 
+    }
+
+    private final String[] operators = {"+", "-", "*", "/", "^", "√", "<", "<=", ">=", ">", "!=", "=="};
+
+    private void preventEndlessOps(String buttonText) {
+        //Prevent user from submitting an endless succession of operators.
+        String displayText = display.getText();
+
+        if ((!buttonIsOperator(buttonText)) || (!displayEndsWOperator())) {
+            if (!repeatingCommas(buttonText)) {
+                display.setText(displayText + buttonText);
+            }
+        }
+    }
+
+    private boolean repeatingCommas(String buttonText) {
+        //Prevent user from submitting an endless succession of commas or decimal points.
+        boolean result = false;
+        String displayText = display.getText();
+
+        String[] noRepeats = {",", "."};
+
+        for (String eachChar : noRepeats) {
+            if ((buttonText.contains(eachChar)) && (displayText.endsWith(eachChar))) {
+                result = true;
+                break;
+            }
+        }
+
+        return result;
+
+    }
+
+    private boolean buttonIsOperator(String btnText) {
+        boolean result = false;
+
+        for (String eachOperator : operators) {
+            if (btnText.contains(eachOperator)) {
+                result = true;
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    private boolean displayEndsWOperator() {
+        boolean result = false;
+
+        String displayText = display.getText();
+
+        for (String eachOperator : operators) {
+            if (displayText.endsWith(eachOperator)) {
+                result = true;
+                break;
+            }
+        }
+
+        return result;
     }
 
     private boolean solvedText(String currentText) {
