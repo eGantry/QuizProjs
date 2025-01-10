@@ -18,10 +18,12 @@ public class RevisedUI {
     private JTextArea display;
     private JPanel mathBtns;
     private JPanel algebraBtns;
+    private CalculatorBackend backend;
     private boolean solved = false;
 
-    public RevisedUI() {
-        mainPanel = new JFrame("Algebrator");
+    public RevisedUI(CalculatorBackend backend) {
+        this.backend = backend;
+        mainPanel = new JFrame("The Algebrator");
         mainPanel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainPanel.setSize(400, 600);
         mainPanel.setLayout(new BorderLayout());
@@ -110,13 +112,13 @@ public class RevisedUI {
 
     private void handleButtonPress(ActionEvent e) {
         JButton source = (JButton) e.getSource();
-        String text = source.getText();
+        String buttonText = source.getText();
 
-        if (null == text) {
-            display.append(text);
+        if (null == buttonText) {
+            display.append(buttonText);
         } else {
-            String currentText = display.getText();
-            switch (text) {
+            String displayText = display.getText();
+            switch (buttonText) {
                 case "C" -> {
                     //Clear the value from the display.
                     display.setText("0");
@@ -124,22 +126,27 @@ public class RevisedUI {
                 }
                 case "Solve" -> {
                     //Call the backend to solve the current expression
+                    if (!displayText.equals("0")) {
+                        String result = backend.solveProblem(displayText);
+                        display.setText(result);
+                        solved = true;
+                    }
                 }
                 case "←" -> {
-                    if (!currentText.isEmpty()) {
-                        display.setText(currentText.substring(0, currentText.length() - 1));
+                    if (!displayText.isEmpty()) {
+                        display.setText(displayText.substring(0, displayText.length() - 1));
                     }
                 }
                 case "2√" -> {
                     //Reverse square root
-                    updateDisplay(reverseText(text));
+                    updateDisplay(reverseText(buttonText));
                 }
                 case "3√" -> {
                     //Reverse cubed root
-                    updateDisplay(reverseText(text));
+                    updateDisplay(reverseText(buttonText));
                 }
                 default ->
-                    updateDisplay(text);
+                    updateDisplay(buttonText);
             }
         }
 
@@ -158,9 +165,9 @@ public class RevisedUI {
     private void updateDisplay(String buttonText) {
 
         String displayText = display.getText();
-
+        boolean isVariable = buttonText.length() == 1 && Character.isLowerCase(buttonText.charAt(0)) && Character.isLetter(buttonText.charAt(0));
         if (solved) {
-            if (buttonText.matches("[0-9]") || buttonText.equals(".")) {
+            if (buttonText.matches("[0-9]") || buttonText.equals(".") || buttonText.equals("-") || isVariable) {
                 display.setText(buttonText);
             } else {
                 //Prevent user from entering an endless succession of operators.
@@ -168,7 +175,7 @@ public class RevisedUI {
             }
             solved = false;
         } else {
-            if (solvedText(displayText)) {
+            if (stableText(displayText)) {
                 display.setText(buttonText);
             } else {
                 //Prevent user from entering an endless succession of operators.
@@ -237,10 +244,10 @@ public class RevisedUI {
         return result;
     }
 
-    private boolean solvedText(String currentText) {
+    private boolean stableText(String currentText) {
         boolean result = false;
 
-        if ((currentText.equals("0")) || (currentText.contains("Result")) || (currentText.contains("Solutions"))) {
+        if ((currentText.equals("0")) || (currentText.contains("Solutions"))) {
             result = true;
         }
 
@@ -248,6 +255,6 @@ public class RevisedUI {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(RevisedUI::new);
+        SwingUtilities.invokeLater(() -> new RevisedUI(new CalculatorBackend()));
     }
 }

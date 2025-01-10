@@ -31,7 +31,7 @@ public class CalculatorBackend {
             if (!scrubbedProblem.contains("=")) {
                 // Handle arithmetic expressions
                 IExpr result = evaluator.evaluate(scrubbedProblem);
-                return "Result: " + result.toString();
+                return result.toString();
             }
 
             // Handle algebraic equations
